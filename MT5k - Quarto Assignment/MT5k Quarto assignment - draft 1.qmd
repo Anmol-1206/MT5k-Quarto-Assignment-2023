@@ -1,0 +1,317 @@
+---
+title: "MT5k- Quarto Assignment- A story of fight against malaria through Insecticide Treated Net between 2009 to 2021 in Maleria Endemic Countries"
+author: "Anmol Srivastava"
+format: html
+editor: visual
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+# libraries
+install.packages("tidyverse")
+library("tidyverse")
+install.packages("maps")
+library(maps)
+map_world <- map_data("world") %>% 
+  as_tibble
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+    install.packages("dplyr")
+  }
+   library(dplyr)
+    if (!requireNamespace("sf", quietly = TRUE)) {
+    install.packages("sf")
+  }
+  if (!requireNamespace("rnaturalearth", quietly = TRUE)) {
+    install.packages("rnaturalearth")
+  }
+  if (!requireNamespace("rnaturalearthdata", quietly = TRUE)) {
+    install.packages("rnaturalearthdata")
+  }
+  if (!requireNamespace("plotly", quietly = TRUE)) {
+    install.packages("plotly")
+  }
+  library(sf)
+  library(ggplot2)
+  library(plotly)
+  library(rnaturalearth)
+  library(rnaturalearthdata)
+   install.packages("viridis")
+  library(viridis)
+options(scipen = 999)
+# data
+# load Indicator 02: unicef_indicator_2- Household with insecticide treated net -user 
+my_data1 <- read.csv("unicef_indicator_2- Household with insecticide treated net -user.csv")
+# country: Name of country.
+# time_period: Year of the observation (between 2009 and 2020).
+# obs_value: Household with insecticide treated net (ITN) and/or indoor residual spraying (IRS) - percentage of households with at least one ITN for every two persons and/or IRS in the past 12 months
+# unit_of_measure: Measured as a % of total number of households
+# load Metadata: unicef_metadata - World development Indicator - user 
+my_data2 <- read.csv("unicef_metadata - World development Indicator - user.csv")
+# country: Name of country.
+# year: Year of the observation (between 2009 and 2021).
+# Population_total: Total Population by that year
+# per capita GDP: GDP per capita (constant 2015 US$)
+# GNI: GNI (current US$)
+# Inflation: Inflation_consumer prices (annual %)
+# Life Expectancy: Life expectancy at birth_total (years)
+# Military Expenditure: Military expenditure (% of GDP)
+
+#| label: setup
+#| include: false
+str(my_data1)
+str(my_data2)
+# Sort & Filter Indicator 2 data: Obs_array01 has Countries with obs_value over 20% 
+obs_array1 <- my_data1 %>% 
+  select(country, time_period, obs_value) %>%
+  rename(year = time_period) %>%
+  filter(obs_value > 20) %>%
+  arrange(year)
+# Sort & Filter World data: Obs_array02 has Country wise Population & Life Expectancy data after 2009
+obs_array2 <- my_data2 %>%
+  select(country, year, Population_total, Life.expectancy.at.birth_total..years., GDP.per.capita..constant.2015.US.., Inflation_consumer.prices..annual..., GNI..current.US..) %>%
+  filter(year >= 2009) %>%
+  arrange(year)
+bind_rows(obs_array1, obs_array2)
+# data_merge1 only has Country wise population & life expectancy data 
+data_merge1 <- merge(obs_array1, obs_array2, by = c("country", "year"))
+```
+# INTRODUCTION
+Twenty years ago, global leaders identified malaria as a serious public health challenge and one of the biggest impediments to global development, particularly in the world’s poorest countries. At a meeting of the United Nations General Assembly, they pledged to halt and begin to reverse the incidence of malaria by 2015 – a critical global target of the Millennium Development Goals. 
+Over the last 12 years between 2009 to 2021, the success of malaria intervention has undergone an unprecedented expansion by means of distribution of Insecticide Treated Net distribution. *(UNICEF, 2015)*. 
+This report assesses progress in making available this key intervention to reduce the burden of malaria, particularly across sub-Saharan Africa, where the burden is greatest.  
+## Global Progress in ITN adoption between 2009-2021
+The first Indicator shows World Map plot for countries where malaria is concentrated and use of Insecticide Treated Net is actively monitored by UNICEF over the entire observation period. High values of the indicator, ideally 100%, are needed to ensure that the most vulnerable populations are protected from malaria.
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 5
+#| fig-width: 5
+# Scatterplot 01: Yearly progress of % ITN
+ggplot(data_merge1, mapping = aes(year, obs_value, colour = country))+ 
+  geom_point()+
+    labs(
+    x = "Year (from 2009 to 2020)",
+    y = "% household with ITN",
+    title = "Global evolution of % households with 
+Insecticide Treated Net 
+    from 2009 to 2021"
+  )
+```
+The proportion of households using ITN has increased markedly in, from less than 2% in 2009 to an estimated 68% in 2021. However, the combined estimates of % households with an ITN conceal large variations in progress across countries. 
+# OBSERVATION
+## Periodic Global Progress in ITN adoption between 2009-2021
+To capture this contrast, I present a series of World maps with a breakdown-observations covering different time periods. 
+### 2009-2011 
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# World Map  2009 -2011 
+   Obs_2009_2011<- data_merge1 %>% 
+    filter(year >= 2009) %>%
+filter (year <2012)
+  map_world <- map_data("world") 
+  map_obs_2009_2011 <- full_join(map_world, Obs_2009_2011, by = c("region" = "country"))
+  ggplot(data = map_obs_2009_2011) +
+    aes(x = long, y = lat, group = group, fill = obs_value) +
+    geom_polygon()+
+    scale_fill_gradient(low = "#174369", high = "#549DDE", na.value = "#A1AEA6") +
+    labs(
+      title = "Differences between countries regarding 
+the % households with ITN between 2009-2011",
+      subtitle = "No data was tracked by UNICEF for Countries in grey ",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Longitude",
+      y = "Latitude",
+      fill = "% ITN Household record between 2009-2011"
+    ) + 
+    guides(fill ="none")+
+        theme_bw()
+```
+
+### 2012-2014
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# World Map  2012 -2014 
+   Obs_2012_2014<- data_merge1 %>% 
+    filter(year >= 2012) %>%
+filter (year <2015)
+  map_world <- map_data("world") 
+  map_obs_2012_2014 <- full_join(map_world, Obs_2012_2014, by = c("region" = "country"))
+  ggplot(data = map_obs_2012_2014) +
+    aes(x = long, y = lat, group = group, fill = obs_value) +
+    geom_polygon()+
+    scale_fill_gradient(low = "#174369", high = "#549DDE", na.value = "#A1AEA6") +
+    labs(
+      title = "Differences between countries regarding 
+the % households with ITN between 2012 -2014",
+      subtitle = "No data was tracked by UNICEF for Countries in grey ",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Longitude",
+      y = "Latitude",
+      fill = "% ITN Household record between 2012 -2014"
+    ) + 
+    guides(fill ="none")+
+        theme_bw()
+```
+. 
+### 2015-2018
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# World Map  2015 -2018 
+   Obs_2015_2018<- data_merge1 %>% 
+    filter(year >= 2015) %>%
+filter (year <2019)
+  map_world <- map_data("world") 
+  map_obs_2015_2018 <- full_join(map_world, Obs_2015_2018, by = c("region" = "country"))
+  ggplot(data = map_obs_2015_2018) +
+    aes(x = long, y = lat, group = group, fill = obs_value) +
+    geom_polygon()+
+    scale_fill_gradient(low = "#174369", high = "#549DDE", na.value = "#A1AEA6") +
+    labs(
+      title = "Differences between countries regarding 
+the % households with ITN between 2015 -2018",
+      subtitle = "No data was tracked by UNICEF for Countries in grey ",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Longitude",
+      y = "Latitude",
+      fill = "% ITN Household record between 2015 -2018"
+    ) + 
+    guides(fill ="none")+
+        theme_bw()
+```
+
+### 2019-2021 
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# World Map 2019 -2021 
+   Obs_2019_2021<- data_merge1 %>% 
+    filter(year >= 2019) %>%
+filter (year <=2021)
+  map_world <- map_data("world") 
+  map_obs_2019_2021 <- full_join(map_world, Obs_2019_2021, by = c("region" = "country"))
+  ggplot(data = map_obs_2019_2021) +
+    aes(x = long, y = lat, group = group, fill = obs_value) +
+    geom_polygon()+
+    scale_fill_gradient(low = "#174369", high = "#549DDE", na.value = "#A1AEA6") +
+    labs(
+      title = "Differences between countries regarding 
+the % households with ITN between 2019 -2021",
+      subtitle = "No data was tracked by UNICEF for Countries in grey ",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Longitude",
+      y = "Latitude",
+      fill = "% ITN Household record between 2019 -2021"
+    ) + 
+    guides(fill ="none")+
+        theme_bw()
+```
+# ANALYSIS 
+Clearly, across sub-Saharan Africa insecticide-treated net coverage has expanded considerably. All sub-Saharan countries with trend data available have shown major progress in expanding insecticide-treated net use with 16 of 20 countries with data at least doubling coverage since 2009. Despite this progress, though, overall insecticide treated net use still falls short of global targets. However, the impressive gains made in the fight against malaria across numerous sub-Saharan African countries show that major progress can be achieved—and in a short time. These actions, combined with investments in improved distribution systems within countries, make it likely that there will soon be progress in expanding antimalarial treatment coverage as well. Many countries have recently scaled up their malaria control activities or are in the process of doing so as new funding sources are found. 
+Free distribution of ITNs to all households through mass distribution campaigns has been one of the most effective and equitable ways of increasing the availability of ITNs among populations living in areas with malaria. The United Republic of Tanzania represents an example of the benefits of mass ITN distribution campaigns in a single country. Between 2009 and 2021, the country implemented two mass distribution campaigns, with the goal of achieving universal access to ITNs nationwide
+We now attempt to assimilate the other economic statistics to visualize demographic dynamics 
+## Mean Population between 2009-2021 
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+data_merge1_avg_population <- data_merge1 %>% 
+    group_by(country)%>%
+summarise(m_pop = mean(Population_total))
+ggplot(data_merge1_avg_population) +
+  aes(m_pop, country, fill=country) +
+  geom_col()+
+  labs(
+      title = "Countrywise mean population between 2009 -2021",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Mean Population",
+      y = "Country",
+          ) +
+  guides(fill ="none")
+```
+## Mean GNI between 2009-2021 
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+data_merge1_avg_GNI <- data_merge1 %>% 
+    group_by(country)%>%
+summarise(m_GNI = mean(GNI..current.US..))
+ggplot(data_merge1_avg_GNI) +
+  aes(m_GNI, country, fill=country) +
+  geom_col()+
+  labs(
+      title = "Countrywise mean population between 2009 -2021",
+      caption = "Source: R package {UNICEF Indicator Data}",
+      x = "Mean GNI",
+      y = "Country",
+          ) + 
+  guides(fill ="none")
+```
+We now attempt to assimilate a comparative trend of economic factors like GNI and Inflation based on the evolution of Population and Per capita GDP over the years.
+##** Country wise population growth trend tracked against growth in Gross National Income 2009 to 2021 for Malaria endemic countries**##
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# Scatterplot 02.1
+  ggplot(data_merge1)+
+    geom_point(aes(GNI..current.US.., Population_total, color = country))+
+    guides(color ="none")+
+    labs(
+    x = "GNI (current US$)",
+    y = "Population_total",
+    title = "Country wise Population tracked against GNI 
+    between 2009 to 2021"
+  )
+```
+## Country wise Inflation rate trend tracked against per capita GDP between 2009 to 2021 for Malaria endemic countries
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+# Scatterplot 02.2
+  ggplot(data_merge1)+
+    geom_point(aes(GDP.per.capita..constant.2015.US.., Inflation_consumer.prices..annual..., color = country))+
+    guides(color ="none")+
+  labs(
+    x = "GDP (US$ 2015)",
+    y = "% Inflation",
+    title = "Inflation rate trend tracked against per capita GDP 
+    between 2009 to 2021"
+  )
+```
+# CONCLUSION
+Lastly, I would conclude with ploting a visualisation of Life Expectancy across 2009-2021 in Maleria endemic countries
+## Country wise shifts in Life Expectancy across 2009 to 2021 for Malaria endemic countries
+# Time series
+```{r}
+#| fig-cap: "caption of the figure"
+#| fig-height: 4
+#| fig-width: 4
+data_merge1 %>%
+  ggplot(aes(year, Life.expectancy.at.birth_total..years., color = country)) +
+  geom_point()+
+  geom_line()+
+  labs(
+    x = "Years",
+    y = "Life expectancy at Birth (in years) ",
+    title = "Life Expectancy trend tracked in years  
+    between 2009 to 2021"
+  )+
+guides(color ="none")
+
+```
+Clearly, the life expectancy in each of the countries appears to be rising over the years which could be linked to a lot of factors however, fight against maleria through use of ITN does play a significant role in improving life expectancy among Children under 5 and pregnant women.
+Lastly, eliminating malaria on a global scale is possible – but only if we overcome these barriers and accelerate progress in these high-burden countries. Earlier this year, the World Health Assembly adopted the WHO Global technical strategy for malaria 2016–2030, a 15-year roadmap for malaria control. The strategy sets ambitious global targets, including a further 90 per cent reduction in malaria incidence and mortality by the year 2030. Achieving these targets will require political will, country leadership, and significantly increased investment.
+
